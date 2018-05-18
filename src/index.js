@@ -6,6 +6,7 @@ const {
   saveBills,
   log
 } = require('cozy-konnector-libs')
+
 const request = requestFactory({
   // the debug mode shows all the details about http request and responses. Very usefull for
   // debugging but very verbose. That is why it is commented out by default
@@ -19,7 +20,7 @@ const request = requestFactory({
   jar: true
 })
 
-const baseUrl = 'http://books.toscrape.com'
+const baseUrl = 'https://moncompte.autolib.eu'
 
 module.exports = new BaseKonnector(start)
 
@@ -32,7 +33,13 @@ async function start(fields) {
   log('info', 'Successfully logged in')
   // The BaseKonnector instance expects a Promise as return of the function
   log('info', 'Fetching the list of documents')
-  const $ = await request(`${baseUrl}/index.html`)
+  const $ = await request({
+    url: `${baseUrl}/account/bills`,
+    headers: {
+      // the english version is better to parse
+      'Accept-Language': 'en-GB,en-US'
+    }
+  })
   // cheerio (https://cheerio.js.org/) uses the same api as jQuery (http://jquery.com/)
   log('info', 'Parsing list of documents')
   const documents = await parseDocuments($)
@@ -44,21 +51,26 @@ async function start(fields) {
     // this is a bank identifier which will be used to link bills to bank operations. These
     // identifiers should be at least a word found in the title of a bank operation related to this
     // bill. It is not case sensitive.
-    identifiers: ['books']
+    identifiers: ['autolib']
   })
 }
 
 // this shows authentication using the [signin function](https://github.com/konnectors/libs/blob/master/packages/cozy-konnector-libs/docs/api.md#module_signin)
 // even if this in another domain here, but it works as an example
 function authenticate(username, password) {
+  const url = `${baseUrl}/account/login`
   return signin({
-    url: `http://quotes.toscrape.com/login`,
+    url,
     formSelector: 'form',
     formData: { username, password },
+    headers: {
+      Referer: url // required
+    },
     // the validate function will check if
     validate: (statusCode, $) => {
-      // The login in toscrape.com always works excepted when no password is set
-      if ($(`a[href='/logout']`).length === 1) {
+      // detect logout button to know if signed in
+      // 2 logout buttons: mobile and desktop
+      if ($(`a[href='/account/logout/']`).length === 2) {
         return true
       } else {
         // cozy-konnector-libs has its own logging function which format these logs with colors in
@@ -78,50 +90,54 @@ function parseDocuments($) {
   const docs = scrape(
     $,
     {
-      title: {
-        sel: 'h3 a',
-        attr: 'title'
+      id: 'td:nth-child(1)',
+      date: {
+        sel: 'td:nth-child(2)',
+        parse: str => new Date(str)
       },
+      status: 'td:nth-child(3)',
       amount: {
-        sel: '.price_color',
+        sel: 'td:nth-child(4)',
         parse: normalizePrice
       },
-      url: {
-        sel: 'h3 a',
-        attr: 'title',
-        parse: url => `${baseUrl}/${url}`
-      },
       fileurl: {
-        sel: 'img',
-        attr: 'src',
-        parse: src => `${baseUrl}/${src}`
-      },
-      filename: {
-        sel: 'h3 a',
-        attr: 'title',
-        parse: title => `${title}.jpg`
+        sel: 'a',
+        attr: 'href',
+        parse: href => `${baseUrl}${href}`
       }
     },
-    'article'
+    'table.table-bills tbody tr'
   )
-  return docs.map(doc => ({
-    ...doc,
-    // the saveBills function needs a date field
-    // even if it is a little artificial here (these are not real bills)
-    date: new Date(),
-    currency: '€',
-    vendor: 'template',
-    metadata: {
-      // it can be interesting that we add the date of import. This is not mandatory but may be
-      // usefull for debugging or data migration
-      importDate: new Date(),
-      // document version, usefull for migration after change of document structure
-      version: 1
-    }
-  }))
+  return docs.map(
+    doc =>
+      doc.status === 'Paid' && {
+        ...doc,
+        currency: '€',
+        vendor: 'autolib',
+        filename: getFileName(doc.id, doc.date),
+        metadata: {
+          // it can be interesting that we add the date of import. This is not mandatory but may be
+          // usefull for debugging or data migration
+          importDate: new Date(),
+          // document version, usefull for migration after change of document structure
+          version: 1
+        }
+      }
+  )
+}
+
+function getStringDate(date) {
+  return `${('0' + date.getMonth()).slice(-2)}_${('0' + date.getDay()).slice(
+    -2
+  )}_${date.getFullYear()}`
+}
+
+// compute file name
+function getFileName(id, date) {
+  return `${getStringDate(date)}_${id}_autolib.pdf`
 }
 
 // convert a price string to a float
 function normalizePrice(price) {
-  return parseFloat(price.trim().replace('£', ''))
+  return parseFloat(price.trim().replace('€', ''))
 }
