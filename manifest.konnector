@@ -84,5 +84,6 @@
         }
       }
     }
-  }
+  },
+  "banksTransactionRegExp": "\\bautolib\\b"
 }
