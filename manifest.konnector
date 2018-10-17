@@ -85,5 +85,6 @@
       }
     }
   },
-  "banksTransactionRegExp": "\\bautolib\\b"
+  "banksTransactionRegExp": "\\bautolib\\b",
+  "manifest_version": "2"
 }
