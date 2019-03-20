@@ -5,7 +5,7 @@
   "language": "node",
   "icon": "icon.svg",
   "slug": "autolib",
-  "source": "git://github.com/konnectors/autolib.git",
+  "source": "git@github.com:konnectors/autolib.git",
   "editor": "Cozy",
   "vendor_link": "https://www.autolib.eu",
   "categories": [
