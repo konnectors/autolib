@@ -1,11 +1,8 @@
 language: node_js
 node_js:
-- '8'
+- '12'
 env:
   global:
-  - GH_USER_EMAIL="travis@example.org"
-  - GH_USER_NAME="cozy-bot"
-  - DEPLOY_REPOSITORY="git@github.com:konnectors/autolib.git"
   - secure: QAhYhAp3qqnuYJbEGM3gmurTtE9A1ffV/AuJn7vRiubGiS1MkW+f/sVKDhXT99Nq/4ZI4KyxZ6Fo7N1cQbzLWDnpL4Xed/oIxwFghsdlECM5AzJJwK8X09BuDr/8nbJImUYLg7XO5+v0nILqyPQF+T5ZwyR/MCily4Z2SMDWiTUADeytZKq74r3NMAajzdAsziGscjqDuhm6xxE7+mHAmnIQYEvpi3g6KxkXkHksqU1+7awZ/wStOQw5giff9OMFbowvMey/T5wRSTIemBbULSY25/mQAVKiX6K/JzmDO4pnWfGotDnNsbqwLMBky1XP6RAaZ3w25SePOyANLfpT9r2bf3jHgewtrM3wShVksA23Ij873VdesQDUXuAxDTawWCBJkki3BNLc0zIgW/cT8Xx7/M87yoUSVLlCZ5fjRmlpb8OWb2TbkltZahdT8kdKAtPpMpZC8VFQkTOzXlW9BpzGD6DfvY4LZx5WdEfC/DadFsHkxECZw4RHAOA4lV6BY51JFPcYUhNSUVrfbff7nLVPAjmK5gU3mC1WsCPaoQ0PrKVrsoq7in8WDjcR+YHxBSXNJFdYn6aq+zQed2zphafiQ/MFjZsrEV2R7UOf7mJHCxlGAu/ReUvMtDBY18s+UZQ8rVIadgjz4DkX7HjptkWsrlMn8E7dlA9D5csjlz8=
 cache:
   yarn: true
@@ -18,7 +15,6 @@ branches:
 script:
 - yarn lint
 - yarn build
-- yarn run check
 deploy:
 - provider: script
   skip-cleanup: true
